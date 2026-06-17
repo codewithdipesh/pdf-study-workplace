@@ -21,7 +21,7 @@ type ReaderState = {
   toggleBookmarks: () => void;
 };
 
-export const useReaderStore = create<ReaderState>((set) => ({
+const useReaderStoreBase = create<ReaderState>((set) => ({
   currentPage: 1,
   zoom: 1,
   fitMode: "width",
@@ -37,3 +37,8 @@ export const useReaderStore = create<ReaderState>((set) => ({
   toggleNotes: () => set((state) => ({ showNotes: !state.showNotes })),
   toggleBookmarks: () => set((state) => ({ showBookmarks: !state.showBookmarks })),
 }));
+
+// Memoized selectors to avoid infinite loops
+export const useReaderStore = useReaderStoreBase;
+export const useReaderTool = () => useReaderStoreBase((state) => state.tool);
+export const useSetReaderTool = () => useReaderStoreBase((state) => state.setTool);

@@ -12,6 +12,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { getCurrentUserId } from "@/lib/supabase/auth";
 import { buildStoragePath, isPdfFile, getPdfPageCount } from "@/lib/pdf";
 import { STORAGE_BUCKET } from "@/lib/constants";
 
@@ -39,14 +40,11 @@ export function UploadClient({ userId }: { userId: string | null }) {
       setProgress(5);
       setFileName(file.name);
       const supabase = createSupabaseBrowserClient();
-      const storagePath = buildStoragePath(userId, file.name);
 
       try {
+        const currentUserId = userId ?? (await getCurrentUserId());
+        const storagePath = buildStoragePath(currentUserId, file.name);
         const totalPagesPromise = getPdfPageCount(file);
-        const session = await supabase.auth.getSession();
-        if (!session.data.session) {
-          throw new Error("Your session expired. Please login again.");
-        }
 
         const fakeProgress = window.setInterval(() => {
           setProgress((current) => Math.min(92, current + 6));
@@ -67,7 +65,7 @@ export function UploadClient({ userId }: { userId: string | null }) {
         const totalPages = await totalPagesPromise;
 
         const { error: insertError } = await supabase.from("pdfs").insert({
-          user_id: userId,
+          user_id: currentUserId,
           title: file.name.replace(/\.pdf$/i, ""),
           file_url: storagePath,
           total_pages: totalPages,
